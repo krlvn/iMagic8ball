@@ -1,37 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
-################### Это телеграм-бот magic8ball
-
 import sys
 import random
 import telebot
-from telebot import types
+from settings import token
 
-telegram_bot = telebot.TeleBot('1876177016:AAE7YO3RkyKjvWzftIR2LHluT0i4RFexrio')
+
+# Подключаемся к telegram-боту
+telegram_bot = telebot.TeleBot(token)
 
 def keybord_buttons(message):
-      keyboard = types.InlineKeyboardMarkup();
-      key_yes = types.InlineKeyboardButton(text='Да', callback_data='yes'); #кнопка «Да»
+      keyboard = telebot.types.InlineKeyboardMarkup();
+      key_yes = telebot.types.InlineKeyboardButton(text='Да', callback_data='yes'); #кнопка «Да»
       keyboard.add(key_yes); #добавляем кнопку в клавиатуру
-      key_no= types.InlineKeyboardButton(text='Нет', callback_data='no');
+      key_no= telebot.types.InlineKeyboardButton(text='Нет', callback_data='no');
       keyboard.add(key_no);
 
-      mm = types.ReplyKeyboardMarkup(row_width=3,resize_keyboard=True,)
-      button1 = types.KeyboardButton("Узнать ответ")
+      mm = telebot.types.ReplyKeyboardMarkup(row_width=3,resize_keyboard=True,)
+      button1 = telebot.types.KeyboardButton("Узнать ответ")
 
       mm.row(button1)
 
       return mm
       
       
+     
+# Приветствие (первое сообщение от бота)
 @telegram_bot.message_handler(commands=['start'])
 def get_commands(message):
     telegram_bot.send_message(message.from_user.id, text='Привет, я бот-предсказатель. Мысленно задай вопрос и нажми кнопку Встряхнуть', reply_markup=keybord_buttons(message))
-       
+ 
 @telegram_bot.message_handler(content_types=['text'])
 def get_text_messages(message):
-    photo_file = 'ball_' + str(random.randint(1,20)) + '.png'
+    photo_file = 'img/ball_' + str(random.randint(1,20)) + '.png'
     photo = open(photo_file, 'rb')
     telegram_bot.send_photo(message.chat.id, photo)
     print(message.from_user.id)
@@ -62,22 +64,6 @@ telegram_bot.polling(none_stop=True, interval=0)
 
 
 
-
-
-
-##from datetime import datetime
-##import vk_api
-##import requests
-##import json
-##import re
-##import configparser
-##import sys
-##import time
-##import random
-##import urllib
-##import wget # Скачивание файла из инета
-##import telebot
-##from telebot import types
 ##
 ##telegram_bot = telebot.TeleBot('1876177016:AAE7YO3RkyKjvWzftIR2LHluT0i4RFexrio')
 ##
