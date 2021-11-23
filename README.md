@@ -17,4 +17,4 @@ pip install -r requirements.txt
 2. Open Telegram messenger and chat @Botfather. Create a new bot and get TOKEN. (instruction https://core.telegram.org/bots#6-botfather).
 3. Changes the name of the "settings.py.example" to "settings.py".
 4. Open "settings.py" and insert TOKEN.
-5. Run "magic8ball.py"
+5. Run "imagic8ball.py"
