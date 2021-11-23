@@ -1,5 +1,6 @@
 # Description
 This telegram bot simulates the "Magic 8-Ball". It is used for fortune-telling or seeking advice.<br>
+It is supported 4 languages: English, French, Espanol, Russian.<br>
 You can see how it works: @iMagic8ball_bot
 
 ## Requirements:
