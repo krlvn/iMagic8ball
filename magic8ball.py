@@ -1,171 +1,144 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
-import sys
-import random
 import telebot
-from settings import token
+import sqlite3
+from random import randint
+from settings import token, texts
 
 
-# Подключаемся к telegram-боту
-telegram_bot = telebot.TeleBot(token)
+# Connect (or create) DB sqlight3 for save user's language
+try:
+    sqlite_connection = sqlite3.connect('db.sqlite3')                           
+    cursor = sqlite_connection.cursor()
 
-def keybord_buttons(message):
-      keyboard = telebot.types.InlineKeyboardMarkup();
-      key_yes = telebot.types.InlineKeyboardButton(text='Да', callback_data='yes'); #кнопка «Да»
-      keyboard.add(key_yes); #добавляем кнопку в клавиатуру
-      key_no= telebot.types.InlineKeyboardButton(text='Нет', callback_data='no');
-      keyboard.add(key_no);
+    sqlite_create_table_query = "CREATE TABLE user_language (id INTEGER PRIMARY KEY, language TEXT NOT NULL)"          
+    cursor.execute(sqlite_create_table_query)
+    sqlite_connection.commit()
+    cursor.close()
 
-      mm = telebot.types.ReplyKeyboardMarkup(row_width=3,resize_keyboard=True,)
-      button1 = telebot.types.KeyboardButton("Узнать ответ")
+except sqlite3.Error as error:
+    print('Error : ', error)
+finally:
+    if (sqlite_connection):
+        sqlite_connection.close()
 
-      mm.row(button1)
 
-      return mm
-      
-      
-     
-# Приветствие (первое сообщение от бота)
-@telegram_bot.message_handler(commands=['start'])
-def get_commands(message):
-    telegram_bot.send_message(message.from_user.id, text='Привет, я бот-предсказатель. Мысленно задай вопрос и нажми кнопку Встряхнуть', reply_markup=keybord_buttons(message))
- 
-@telegram_bot.message_handler(content_types=['text'])
-def get_text_messages(message):
-    photo_file = 'img/ball_' + str(random.randint(1,20)) + '.png'
-    photo = open(photo_file, 'rb')
-    telegram_bot.send_photo(message.chat.id, photo)
-    print(message.from_user.id)
-    print(message.from_user.username)
-    print(message.from_user.first_name)
-    print(message.from_user.last_name)
-    print(message.from_user.is_bot)
-    print(message.from_user.language_code)
+# Connect telegram
+bot = telebot.TeleBot(token)
+
+
+# Create menu with commands
+bot.set_my_commands([
+    telebot.types.BotCommand('/en', 'English'),
+    telebot.types.BotCommand('/fr', 'Français (French)'),
+    telebot.types.BotCommand('/es', 'Español (Spanish)'),
+    telebot.types.BotCommand('/ru', 'Русский (Russian)')
+])
+
+
+def get_user_language(user_id,tg_lang):
+    # Connect (or create) DB sqlight3 for save user's language
+    try:
+        sqlite_connection = sqlite3.connect('db.sqlite3')
+    except sqlite3.Error as error:
+        print('Error : ', error)
+        
+    # Get user language from DB
+    cursor = sqlite_connection.cursor()
+    cursor.execute("SELECT language FROM user_language WHERE id = ? LIMIT 0, 1", (user_id,))
+    record = cursor.fetchone()
+    cursor.close()        
+
+    if record != None:
+        # Get user language from DB
+        language = record[0]
+    else:
+
+        # Get language of telegram
+        language = 'en'
+        if str(tg_lang) in ['en','fr','es','ru']:
+            language = str(tg_lang)
+             
+        # Add user to DB
+        cursor = sqlite_connection.cursor()
+        cursor.execute("INSERT INTO user_language (id, language) VALUES (?, ?)", (user_id, language))
+        sqlite_connection.commit()
+        cursor.close()
+        
+    if sqlite_connection:
+        sqlite_connection.close()
+
+    return language
+
+
+def update_user_language(user_id,language):
+    # Connect (or create) DB sqlight3 for save user's language
+    try:
+        sqlite_connection = sqlite3.connect('db.sqlite3')
+    except sqlite3.Error as error:
+        print('Error : ', error)
+        
+    # Update user language in DB
+    cursor = sqlite_connection.cursor()
+    cursor.execute("UPDATE user_language SET language = ? WHERE id = ?", (language, user_id))
+    sqlite_connection.commit()
+    cursor.close()
+        
+    if sqlite_connection:
+        sqlite_connection.close()
+
+    return language
 
     
- 
+# Commands
+@bot.message_handler(commands=['start','en','fr','es','ru'])
+def get_commands(command):
+    
+    # Get user language
+    if command.text == '/start':
+        language = get_user_language(str(command.from_user.id),str(command.from_user.language_code))         
+    elif command.text == '/en':
+        language = update_user_language(str(command.from_user.id),'en')
+    elif command.text == '/fr':
+        language = update_user_language(str(command.from_user.id),'fr')
+    elif command.text == '/es':
+        language = update_user_language(str(command.from_user.id),'es')
+    elif command.text == '/ru':
+        language = update_user_language(str(command.from_user.id),'ru')
+
+    # Send first message
+    if command.text in ['/start','/en','/fr','/es','/ru']:
+    
+        # Upload sticker
+        sticker = open('img/question.png', 'rb')
+
+        # First message from bot
+        bot.send_sticker(command.from_user.id, sticker)
+        bot.send_message(command.from_user.id, text=texts[language][1])
+
+    else:
+        # Unrecognized command
+        bot.send_message(command.from_user.id, text=texts[language][3])
 
 
-telegram_bot.polling(none_stop=True, interval=0)
+@bot.callback_query_handler(func=lambda call: True)
+@bot.message_handler(content_types=['text'])
+def answer(message):
+    
+    # Get user language
+    language = get_user_language(str(message.from_user.id),str(message.from_user.language_code))  
+        
+    # Create button
+    keyboard = telebot.types.InlineKeyboardMarkup()    
+    button = telebot.types.InlineKeyboardButton(texts[language][2], callback_data='2')
+    keyboard.add(button)
+
+    # Ubload sticker
+    photo_file = 'img/' + language + '/' + str(randint(1,20)) + '.png'
+    sticker = open(photo_file, 'rb')
+    bot.send_sticker(message.from_user.id, sticker, reply_markup=keyboard)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##
-##telegram_bot = telebot.TeleBot('1876177016:AAE7YO3RkyKjvWzftIR2LHluT0i4RFexrio')
-##
-##lang = 'ru'
-##
-##def keybord_buttons(message):
-##      keyboard = types.InlineKeyboardMarkup();
-##      key_yes = types.InlineKeyboardButton(text='Да', callback_data='yes'); #кнопка «Да»
-##      keyboard.add(key_yes); #добавляем кнопку в клавиатуру
-##      key_no= types.InlineKeyboardButton(text='Нет', callback_data='no');
-##      keyboard.add(key_no);
-##
-##      mm = types.ReplyKeyboardMarkup(row_width=1)
-##      button1 = types.KeyboardButton("Встряхнуть")
-##      if lang == 'ru':
-##          button2 = types.KeyboardButton("English")
-##      else:
-##          button2 = types.KeyboardButton("Русский")
-##      
-##      mm.add(button1)
-##
-##      return mm
-##      
-##      
-##@telegram_bot.message_handler(commands=['start'])
-##def get_commands(message):
-##    telegram_bot.send_message(message.from_user.id, text='Привет, я бот-предсказатель. Мысленно задай вопрос и нажми кнопку Встряхнуть', reply_markup=keybord_buttons(message))
-##       
-##@telegram_bot.message_handler(content_types=['text'])
-##def get_text_messages(message):
-##
-##    global lang
-##
-##    answers_ru = [
-##        'Бесспорно',
-##        'Предрешено',
-##        'Никаких сомнений',
-##        'Определённо да',
-##        'Можешь быть уверен в этом',
-##        'Мне кажется — «да»',
-##        'Вероятнее всего',
-##        'Хорошие перспективы',
-##        'Знаки говорят — «да»',
-##        'Да',
-##        'Пока не ясно, попробуй снова',
-##        'Спроси позже',
-##        'Лучше не рассказывать',
-##        'Сейчас нельзя предсказать',
-##        'Сконцентрируйся и спроси опять',
-##        'Даже не думай',
-##        'Мой ответ — «нет»',
-##        'По моим данным — «нет»',
-##        'Перспективы не очень хорошие',
-##        'Весьма сомнительно'
-##    ]
-##
-##
-##    answers_en = [
-##        'It is certain',
-##        'It is decidedly so',
-##        'Without a doubt',
-##        'Yes — definitely',
-##        'You may rely on it',
-##        'As I see it, yes',
-##        'Most likely',
-##        'Outlook good',
-##        'Signs point to yes',
-##        'Yes',
-##        'Reply hazy, try again',
-##        'Ask again later',
-##        'Better not tell you now',
-##        'Cannot predict now',
-##        'Concentrate and ask again',
-##        'Don’t count on it',
-##        'My reply is no',
-##        'My sources say no',
-##        'Outlook not so good',
-##        'Very doubtful'
-##    ]
-##                      
-##    if message.text == "Встряхнуть":
-##        if lang == 'ru':
-##            answer = random.choice(answers_ru)
-##        else:
-##            answer = random.choice(answers_en)
-##
-##        photo_file = 'ball_' + str(random.randint(1,20)) + '.png'
-##        photo = open(photo_file, 'rb')
-##        telegram_bot.send_photo(message.chat.id, photo)
-##
-####        telegram_bot.send_message(message.chat.id, answer)
-##        keybord_buttons(message)
-##    elif message.text == 'English':
-##        lang = 'en'
-##        telegram_bot.send_message(message.chat.id, "English")
-##        keybord_buttons(message)
-##    elif message.text == "Русский":
-##        lang = 'ru'
-##        telegram_bot.send_message(message.chat.id, "Русский")
-##
-##    
-## 
-##
-##
-##telegram_bot.polling(none_stop=True, interval=0)
+# Listen commmands from users
+bot.infinity_polling(interval=0)
