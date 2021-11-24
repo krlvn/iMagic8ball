@@ -140,5 +140,10 @@ def answer(message):
     bot.send_sticker(message.from_user.id, sticker, reply_markup=keyboard)
 
 
-# Listen commmands from users
-bot.infinity_polling(interval=0)
+
+while True:
+    try:
+        # Listen commmands from users
+        bot.infinity_polling(interval=0)
+    except Exception:
+        pass
