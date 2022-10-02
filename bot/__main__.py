@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 
 from aiogram import Bot, Dispatcher
-# from aiogram.types import BotCommand
+from aiogram.types import BotCommand
 from aiogram.webhook.aiohttp_server import (
     SimpleRequestHandler,
     TokenBasedRequestHandler,
@@ -13,10 +13,13 @@ from aiogram.webhook.aiohttp_server import (
 from bot.handlers import commands
 from bot.settings import *
 
-# async def set_commands(bot: Bot):
-#     await bot.set_my_commands([
-#         BotCommand(command='start', description='\U0001F195 начать'),
-#     ])
+async def set_commands(bot: Bot):
+    await bot.set_my_commands([
+        BotCommand(command='en', description='English'),
+        BotCommand(command='fr', description='Français (French)'),
+        BotCommand(command='es', description='Español (Spanish)'),
+        BotCommand(command='ru', description='Русский (Russian)'),
+    ])
 
 async def on_startup_polling(dispatcher: Dispatcher, bot: Bot):
     await bot.delete_webhook(drop_pending_updates=True)
@@ -33,7 +36,7 @@ def main() -> None:
 
     dp = Dispatcher()
     dp.include_router(commands.router)
-    # dp.startup.register(set_commands)
+    dp.startup.register(set_commands)
 
     try:
         if not WEBHOOK['URL']:
