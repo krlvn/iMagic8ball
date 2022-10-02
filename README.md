@@ -7,6 +7,7 @@ It is supported 4 languages: English, French, Espanol, Russian.
 + Python 3.10
 + aiogram 3.0.0b4
 + python-dotenv 0.21.0
++ SQLAlchemy 1.4.41
 
 ## Usage
 
