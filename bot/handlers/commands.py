@@ -14,9 +14,13 @@ from bot.languages import TEXT
 router = Router()
 
 @router.message(Command(commands=['start','en','fr','es','ru']))
-async def cmd_start(message: Message):
-    uid = message.from_user.id
-    user = await get_or_create_user(uid, message.from_user.language_code)
+async def cmd_start(message: Message, command: Command):
+    if command.command == 'start':
+        user = await get_or_create_user(message.from_user.id,
+                                        message.from_user.language_code)
+    else:
+        user = await update_or_create_user(message.from_user.id,
+                                        language = command.command)
 
     if user.language not in ['en','fr','es','ru']:
         user.language = 'en'
