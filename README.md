@@ -4,9 +4,9 @@ It is supported 4 languages: English, French, Espanol, Russian.
 
 ## Requirements:
 
-+ Python 3.9
++ Python 3.10
 + aiogram 3.0.0b4
-
++ python-dotenv 0.21.0
 
 ## Usage
 
