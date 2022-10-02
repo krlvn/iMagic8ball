@@ -33,22 +33,31 @@ async def get_or_create_user(uid, language):
             await session.commit()
         return new_user
 
-async def update_user(uid, **columns):
+async def update_or_create_user(uid, **columns):
     """
-    Метод обновляет данные пользователя в БД.
+    Метод обновляет данные пользователя в БД, а если пользователя нет, то создаёт нового.
     Обязательно передаём id, и факультативно поля, которые нужно обновить.
     :param tg_uid:
     :return:
     """
     user = await get_user_by_uid(uid)
-    if not user:
-        return None
+    if user:
+        for k, v in columns.items():
+            if hasattr(user, k):
+                setattr(user, k, v)
 
-    for k, v in columns.items():
-        if hasattr(user, k):
-            setattr(user, k, v)
+        async with db_session() as session:
+            session.add(user)
+            await session.commit()
+        return user
+    else:
+        new_user = User(id=uid)
 
-    async with db_session() as session:
-        session.add(user)
-        await session.commit()
-    return user
+        for k, v in columns.items():
+            if hasattr(new_user, k):
+                setattr(new_user, k, v)
+
+        async with db_session() as session:
+            session.add(new_user)
+            await session.commit()
+        return new_user
