@@ -14,7 +14,6 @@ async def get_user_by_uid(uid):
         sql = select(User).where(User.id == uid).limit(1)
         request = await session.execute(sql)
         user = request.scalar_one_or_none()
-    print(user)
     return user
 
 async def get_or_create_user(uid, language):
@@ -26,14 +25,12 @@ async def get_or_create_user(uid, language):
     """
     user = await get_user_by_uid(uid)
     if user:
-        print(user)
         return user
     else:
         new_user = User(id=uid, language=language)
         async with db_session() as session:
             session.add(new_user)
             await session.commit()
-        print(new_user)
         return new_user
 
 async def update_user(uid, **columns):
