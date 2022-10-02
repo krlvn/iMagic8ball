@@ -12,7 +12,6 @@ from aiogram.webhook.aiohttp_server import (
 
 from bot.handlers import commands
 from bot.settings import *
-from bot.languages import TEXT
 
 async def set_commands(bot: Bot):
     await bot.set_my_commands([

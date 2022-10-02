@@ -7,6 +7,9 @@ from aiogram.filters import Command
 # from aiogram.fsm.context import FSMContext
 # from aiogram.fsm.state import State, StatesGroup
 
+from bot.languages import TEXT
+
+
 router = Router()
 
 @router.message(Command(commands=['start','en','fr','es','ru']))
