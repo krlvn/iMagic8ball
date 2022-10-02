@@ -9,6 +9,6 @@ from aiogram.filters import Command
 
 router = Router()
 
-@router.message(Command(commands='start'))
+@router.message(Command(commands=['start','en','fr','es','ru']))
 async def cmd_rules(message: Message):
     await message.answer('<b>Hello bot!</b>')
