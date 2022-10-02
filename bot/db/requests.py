@@ -1,8 +1,8 @@
 from sqlalchemy.future import select
 from sqlalchemy.sql import functions
 
-from engine import db_session
-from models import User
+from .engine import db_session
+from .models import User
 
 async def get_user_by_uid(uid):
     """
