@@ -8,6 +8,8 @@ It is supported 4 languages: English, French, Espanol, Russian.
 + aiogram 3.0.0b4
 + python-dotenv 0.21.0
 + SQLAlchemy 1.4.41
++ asyncpg 0.26.0
++ alembic 1.8.1
 
 ## Usage
 
